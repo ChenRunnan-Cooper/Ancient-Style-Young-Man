@@ -5,8 +5,9 @@ import { computeScene, renderScene } from './scene'
 import type { LayoutConfig, SceneOptions } from './types'
 
 const DEFAULT_CANVAS_SIZE = 1080
-const DEFAULT_BACKGROUND = '/assets/background.jpg'
-const DEFAULT_CHARACTER = '/assets/character.png'
+const ASSET_BASE = import.meta.env.BASE_URL || '/'
+const DEFAULT_BACKGROUND = `${ASSET_BASE}assets/background.jpg`
+const DEFAULT_CHARACTER = `${ASSET_BASE}assets/character.png`
 const MIN_TRIMMED_HEIGHT = 360
 
 function useLoadedImage(src: string | null) {
