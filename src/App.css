@@ -230,6 +230,17 @@ textarea.editor {
   background: rgba(255, 255, 255, 0.9);
 }
 
+.inline-assets li > div:nth-child(2) {
+  min-width: 0;
+}
+
+.inline-assets li > div:nth-child(2) p:first-child {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .inline-assets li img {
   width: 48px;
   height: 48px;
@@ -510,6 +521,23 @@ textarea.editor {
 
   .crop-settings {
     gap: 10px;
+  }
+
+  .inline-assets li {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .inline-assets__actions {
+    grid-column: 2;
+    flex-direction: row;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+
+  .inline-assets__actions button {
+    flex: 1;
+    min-width: 70px;
   }
 }
 
