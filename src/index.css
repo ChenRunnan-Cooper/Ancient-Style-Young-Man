@@ -2,8 +2,6 @@
 
 :root {
   --page-gutter: clamp(20px, 6vw, 32px);
-  --preview-fixed-height: min(56vh, 520px);
-  --preview-fixed-top: calc(var(--page-gutter) + 12px);
   font-family: 'LXGW WenKai', 'LXGW WenKai Screen', 'KaiTi', 'STKaiti', 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.55;
   font-weight: 400;
@@ -18,16 +16,12 @@
 @media (max-width: 980px) {
   :root {
     --page-gutter: clamp(18px, 7vw, 26px);
-    --preview-fixed-height: min(56vh, 500px);
-    --preview-fixed-top: calc(var(--page-gutter) + 10px);
   }
 }
 
 @media (max-width: 640px) {
   :root {
     --page-gutter: 16px;
-    --preview-fixed-height: min(54vh, 460px);
-    --preview-fixed-top: calc(var(--page-gutter) + 8px);
   }
 }
 

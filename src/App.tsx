@@ -155,6 +155,39 @@ const areWarningsEqual = (next: string[], prev: string[] = []) => {
   return true
 }
 
+type MobileTab = 'preview' | 'controls' | 'editor'
+
+function useMediaQuery(query: string) {
+  const getMatches = () => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return window.matchMedia(query).matches
+  }
+
+  const [matches, setMatches] = useState<boolean>(getMatches)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia(query)
+    const listener = (event: MediaQueryListEvent) => {
+      setMatches(event.matches)
+    }
+
+    if (mediaQuery.matches !== matches) {
+      setMatches(mediaQuery.matches)
+    }
+
+    mediaQuery.addEventListener('change', listener)
+    return () => mediaQuery.removeEventListener('change', listener)
+  }, [query, matches])
+
+  return matches
+}
+
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -208,17 +241,14 @@ function App() {
   const renderFrameRef = useRef<number | null>(null)
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const lastWarningsRef = useRef<string[]>([])
-  const controlsSectionRef = useRef<HTMLElement | null>(null)
-  const editorSectionRef = useRef<HTMLElement | null>(null)
-  const previewSectionRef = useRef<HTMLElement | null>(null)
-  const exportSectionRef = useRef<HTMLDivElement | null>(null)
+  const isMobile = useMediaQuery('(max-width: 980px)')
+  const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('preview')
 
-  const scrollToElement = (element: Element | null) => {
-    if (!element) {
-      return
+  useEffect(() => {
+    if (!isMobile) {
+      setActiveMobileTab('preview')
     }
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  }, [isMobile])
 
   const backgroundImage = useLoadedImage(backgroundSource)
   const characterImage = useLoadedImage(characterSource)
@@ -501,6 +531,11 @@ function App() {
     }
   }
 
+  const mainClassName = isMobile ? 'app__main app__main--mobile' : 'app__main'
+  const showControls = !isMobile || activeMobileTab === 'controls'
+  const showEditor = !isMobile || activeMobileTab === 'editor'
+  const showPreview = !isMobile || activeMobileTab === 'preview'
+
   return (
     <div className="app">
       <header className="app__header">
@@ -529,8 +564,9 @@ function App() {
         </div>
       </header>
 
-      <main className="app__main">
-        <section className="panel panel--controls" ref={controlsSectionRef}>
+      <main className={mainClassName}>
+        {showControls && (
+          <section className="panel panel--controls">
           <h2>背景与角色</h2>
           <div className="field">
             <label htmlFor="background-upload">背景图片</label>
@@ -685,9 +721,11 @@ function App() {
               角色阴影
             </label>
           </div>
-        </section>
+          </section>
+        )}
 
-        <section className="panel panel--editor" ref={editorSectionRef}>
+        {showEditor && (
+          <section className="panel panel--editor">
           <h2>文案与内嵌元素</h2>
           <textarea
             ref={textAreaRef}
@@ -824,15 +862,15 @@ function App() {
             </label>
             <div className="color-pickers">
               <label>
-                文字颜色
-                <input
-                  type="color"
-                  value={layoutUI.textColor}
-                  onChange={(event) =>
-                    setLayoutUI((prev) => ({ ...prev, textColor: event.target.value }))
-                  }
-                />
-              </label>
+              文字颜色
+              <input
+                type="color"
+                value={layoutUI.textColor}
+                onChange={(event) =>
+                  setLayoutUI((prev) => ({ ...prev, textColor: event.target.value }))
+                }
+              />
+            </label>
               <label>
                 描边颜色
                 <input
@@ -894,9 +932,11 @@ function App() {
               自动多列排版
             </label>
           </div>
-        </section>
+          </section>
+        )}
 
-        <section className="panel panel--preview" ref={previewSectionRef}>
+        {showPreview && (
+          <section className="panel panel--preview">
           <h2>预览</h2>
           <div className="preview-wrapper">
             <div className="canvas-container" style={{ aspectRatio: previewAspectRatio }}>
@@ -912,7 +952,7 @@ function App() {
             ) : (
               <p className="note">✅ 好了！导出前可再次微调人物与参数。</p>
             )}
-            <div className="crop-settings" ref={exportSectionRef}>
+            <div className="crop-settings">
               <h3>自定义裁剪</h3>
               <label>
                 上裁剪（当前 {Math.round(previewSize.cropTop)} px）
@@ -943,23 +983,35 @@ function App() {
               <p className="hint">拖动滑块即可裁去上下多余留白，导出时同样生效。</p>
             </div>
           </div>
-        </section>
+          </section>
+        )}
       </main>
 
-      <nav className="mobile-nav">
-        <button type="button" onClick={() => scrollToElement(previewSectionRef.current)}>
-          预览
-        </button>
-        <button type="button" onClick={() => scrollToElement(controlsSectionRef.current)}>
-          背景角色
-        </button>
-        <button type="button" onClick={() => scrollToElement(editorSectionRef.current)}>
-          文案排版
-        </button>
-        <button type="button" onClick={() => scrollToElement(exportSectionRef.current)}>
-          裁剪导出
-        </button>
-      </nav>
+      {isMobile ? (
+        <nav className="mobile-nav">
+          <button
+            type="button"
+            className={activeMobileTab === 'preview' ? 'active' : ''}
+            onClick={() => setActiveMobileTab('preview')}
+          >
+            预览
+          </button>
+          <button
+            type="button"
+            className={activeMobileTab === 'controls' ? 'active' : ''}
+            onClick={() => setActiveMobileTab('controls')}
+          >
+            背景角色
+          </button>
+          <button
+            type="button"
+            className={activeMobileTab === 'editor' ? 'active' : ''}
+            onClick={() => setActiveMobileTab('editor')}
+          >
+            文案排版
+          </button>
+        </nav>
+      ) : null}
 
       <footer className="app__footer">
         <p>
