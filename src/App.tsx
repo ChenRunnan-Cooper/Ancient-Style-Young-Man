@@ -132,6 +132,15 @@ const EXPORT_PRESETS = [
   { label: '4096px (4K)', value: 4096 }
 ]
 
+const areWarningsEqual = (next: string[], prev: string[] = []) => {
+  if (next === prev) return true
+  if (next.length !== prev.length) return false
+  for (let index = 0; index < next.length; index += 1) {
+    if (next[index] !== prev[index]) return false
+  }
+  return true
+}
+
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -173,7 +182,7 @@ function App() {
     lineHeight: 1.28,
     maxColumns: 2,
     columnGap: 48,
-    textColor: '#407fbf',
+    textColor: '#003cb3',
     strokeColor: '#ffffff',
     strokeWidth: 3
   })
@@ -183,6 +192,10 @@ function App() {
   const [isExporting, setIsExporting] = useState(false)
   const [selectedExport, setSelectedExport] = useState<number>(EXPORT_PRESETS[1].value)
   const [previewSize, setPreviewSize] = useState({ cropTop: 0, cropBottom: 0, height: DEFAULT_CANVAS_SIZE })
+
+  const renderFrameRef = useRef<number | null>(null)
+  const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const lastWarningsRef = useRef<string[]>([])
 
   const backgroundImage = useLoadedImage(backgroundSource)
   const characterImage = useLoadedImage(characterSource)
@@ -227,6 +240,19 @@ function App() {
     }
   }
 
+  const getOffscreenCanvas = (width: number, height: number) => {
+    let offscreen = offscreenCanvasRef.current
+    if (!offscreen) {
+      offscreen = document.createElement('canvas')
+      offscreenCanvasRef.current = offscreen
+    }
+    if (offscreen.width !== width || offscreen.height !== height) {
+      offscreen.width = width
+      offscreen.height = height
+    }
+    return offscreen
+  }
+
   const previewAspectRatio = useMemo(() => {
     const height = previewSize.height > 0 ? previewSize.height : sceneOptions.canvasHeight
     return `${sceneOptions.canvasWidth} / ${height}`
@@ -259,58 +285,79 @@ function App() {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) {
+      return
+    }
 
-    const params = buildSceneParams(sceneOptions.canvasWidth, sceneOptions.canvasHeight)
-    const computed = computeScene(params)
+    if (renderFrameRef.current !== null) {
+      cancelAnimationFrame(renderFrameRef.current)
+    }
 
-    const offscreen = document.createElement('canvas')
-    offscreen.width = sceneOptions.canvasWidth
-    offscreen.height = sceneOptions.canvasHeight
-    const offscreenCtx = offscreen.getContext('2d')
-    if (!offscreenCtx) return
+    renderFrameRef.current = window.requestAnimationFrame(() => {
+      renderFrameRef.current = null
+      const params = buildSceneParams(sceneOptions.canvasWidth, sceneOptions.canvasHeight)
+      const computed = computeScene(params)
+      const crop = normalizeCrop(
+        cropSettings.top,
+        cropSettings.bottom,
+        sceneOptions.canvasHeight,
+        MIN_TRIMMED_HEIGHT
+      )
 
-    renderScene(offscreenCtx, params, computed)
+      const offscreen = getOffscreenCanvas(params.canvasWidth, params.canvasHeight)
+      const offscreenCtx = offscreen.getContext('2d')
+      if (!offscreenCtx) {
+        return
+      }
+      renderScene(offscreenCtx, params, computed)
 
-    const crop = normalizeCrop(
-      cropSettings.top,
-      cropSettings.bottom,
-      sceneOptions.canvasHeight,
-      MIN_TRIMMED_HEIGHT
-    )
+      const ratio = window.devicePixelRatio || 1
+      canvas.width = params.canvasWidth * ratio
+      canvas.height = crop.height * ratio
+      canvas.style.width = '100%'
+      canvas.style.height = 'auto'
 
-    const ratio = window.devicePixelRatio || 1
-    canvas.width = sceneOptions.canvasWidth * ratio
-    canvas.height = crop.height * ratio
-    canvas.style.width = '100%'
-    canvas.style.height = 'auto'
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        return
+      }
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+      ctx.save()
+      ctx.scale(ratio, ratio)
+      ctx.clearRect(0, 0, params.canvasWidth, crop.height)
+      ctx.drawImage(
+        offscreen,
+        0,
+        crop.top,
+        params.canvasWidth,
+        crop.height,
+        0,
+        0,
+        params.canvasWidth,
+        crop.height
+      )
+      ctx.restore()
 
-    ctx.save()
-    ctx.scale(ratio, ratio)
-    ctx.clearRect(0, 0, sceneOptions.canvasWidth, crop.height)
-    ctx.drawImage(
-      offscreen,
-      0,
-      crop.top,
-      sceneOptions.canvasWidth,
-      crop.height,
-      0,
-      0,
-      sceneOptions.canvasWidth,
-      crop.height
-    )
-    ctx.restore()
+      setScene(computed)
 
-    setScene(computed)
-    setLayoutWarnings(computed.warnings)
-    setPreviewSize((prev) =>
-      prev.cropTop === crop.top && prev.cropBottom === crop.bottom && prev.height === crop.height
-        ? prev
-        : { cropTop: crop.top, cropBottom: crop.bottom, height: crop.height }
-    )
+      if (!areWarningsEqual(computed.warnings, lastWarningsRef.current)) {
+        lastWarningsRef.current = [...computed.warnings]
+        setLayoutWarnings(computed.warnings)
+      }
+
+      setPreviewSize((prev) =>
+        prev.cropTop === crop.top && prev.cropBottom === crop.bottom && prev.height === crop.height
+          ? prev
+          : { cropTop: crop.top, cropBottom: crop.bottom, height: crop.height }
+      )
+    })
+
+    return () => {
+      if (renderFrameRef.current !== null) {
+        cancelAnimationFrame(renderFrameRef.current)
+        renderFrameRef.current = null
+      }
+    }
   }, [
     backgroundImage,
     characterImage,
