@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai&display=swap');
+
 :root {
-  font-family: 'Noto Sans SC', 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'LXGW WenKai', 'LXGW WenKai Screen', 'KaiTi', 'STKaiti', 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.55;
   font-weight: 400;
   font-synthesis: none;

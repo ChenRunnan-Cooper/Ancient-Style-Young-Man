@@ -120,10 +120,10 @@ function normalizeCrop(top: number, bottom: number, fullHeight: number, minHeigh
 }
 
 const FONT_FAMILIES = [
+  'LXGW WenKai, "LXGW WenKai Screen", KaiTi, STKaiti, serif',
   'Noto Sans SC, PingFang SC, Microsoft YaHei, sans-serif',
   'Noto Serif SC, Songti SC, SimSun, serif',
-  'ZCOOL KuaiLe, PingFang SC, sans-serif',
-  'LXGW WenKai, KaiTi, STKaiti, serif'
+  'ZCOOL KuaiLe, PingFang SC, sans-serif'
 ]
 
 const EXPORT_PRESETS = [
