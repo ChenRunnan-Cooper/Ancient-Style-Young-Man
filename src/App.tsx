@@ -534,7 +534,13 @@ function App() {
   const mainClassName = isMobile ? 'app__main app__main--mobile' : 'app__main'
   const showControls = !isMobile || activeMobileTab === 'controls'
   const showEditor = !isMobile || activeMobileTab === 'editor'
-  const showPreview = !isMobile || activeMobileTab === 'preview'
+  const isPreviewExpanded = !isMobile || activeMobileTab === 'preview'
+  const previewPanelClass = !isMobile
+    ? 'panel panel--preview'
+    : isPreviewExpanded
+      ? 'panel panel--preview panel--preview--expanded'
+      : 'panel panel--preview panel--preview--floating'
+  const showPreviewDetails = !isMobile || activeMobileTab === 'preview'
 
   return (
     <div className="app">
@@ -565,8 +571,7 @@ function App() {
       </header>
 
       <main className={mainClassName}>
-        {showControls && (
-          <section className="panel panel--controls">
+        <section className={`panel panel--controls${showControls ? '' : ' panel--mobile-hidden'}`}>
           <h2>背景与角色</h2>
           <div className="field">
             <label htmlFor="background-upload">背景图片</label>
@@ -671,7 +676,7 @@ function App() {
                 }
               />
             </label>
-            <label>
+          <label>
               外框留白
               <input
                 type="range"
@@ -721,11 +726,9 @@ function App() {
               角色阴影
             </label>
           </div>
-          </section>
-        )}
+        </section>
 
-        {showEditor && (
-          <section className="panel panel--editor">
+        <section className={`panel panel--editor${showEditor ? '' : ' panel--mobile-hidden'}`}>
           <h2>文案与内嵌元素</h2>
           <textarea
             ref={textAreaRef}
@@ -932,59 +935,61 @@ function App() {
               自动多列排版
             </label>
           </div>
-          </section>
-        )}
+        </section>
 
-        {showPreview && (
-          <section className="panel panel--preview">
-          <h2>预览</h2>
+        <section className={previewPanelClass}>
+          {(!isMobile || isPreviewExpanded) && <h2>预览</h2>}
           <div className="preview-wrapper">
             <div className="canvas-container" style={{ aspectRatio: previewAspectRatio }}>
               <canvas ref={canvasRef} />
               {safeHighlightStyle ? <div className="safe-highlight" style={safeHighlightStyle} /> : null}
             </div>
-            {layoutWarnings.length > 0 ? (
+            {showPreviewDetails && layoutWarnings.length > 0 ? (
               <div className="warnings">
                 {layoutWarnings.map((warning, index) => (
                   <p key={index}>{warning}</p>
                 ))}
               </div>
-            ) : (
+            ) : null}
+            {showPreviewDetails && layoutWarnings.length === 0 ? (
               <p className="note">✅ 好了！导出前可再次微调人物与参数。</p>
+            ) : null}
+            {showPreviewDetails ? (
+              <div className="crop-settings">
+                <h3>自定义裁剪</h3>
+                <label>
+                  上裁剪（当前 {Math.round(previewSize.cropTop)} px）
+                  <input
+                    type="range"
+                    min={0}
+                    max={480}
+                    step={10}
+                    value={cropSettings.top}
+                    onChange={(event) =>
+                      setCropSettings((prev) => ({ ...prev, top: Number(event.target.value) }))
+                    }
+                  />
+                </label>
+                <label>
+                  下裁剪（当前 {Math.round(previewSize.cropBottom)} px）
+                  <input
+                    type="range"
+                    min={0}
+                    max={480}
+                    step={10}
+                    value={cropSettings.bottom}
+                    onChange={(event) =>
+                      setCropSettings((prev) => ({ ...prev, bottom: Number(event.target.value) }))
+                    }
+                  />
+                </label>
+                <p className="hint">拖动滑块即可裁去上下多余留白，导出时同样生效。</p>
+              </div>
+            ) : (
+              isMobile && <span className="preview-overlay-tag">实时预览</span>
             )}
-            <div className="crop-settings">
-              <h3>自定义裁剪</h3>
-              <label>
-                上裁剪（当前 {Math.round(previewSize.cropTop)} px）
-                <input
-                  type="range"
-                  min={0}
-                  max={480}
-                  step={10}
-                  value={cropSettings.top}
-                  onChange={(event) =>
-                    setCropSettings((prev) => ({ ...prev, top: Number(event.target.value) }))
-                  }
-                />
-              </label>
-              <label>
-                下裁剪（当前 {Math.round(previewSize.cropBottom)} px）
-                <input
-                  type="range"
-                  min={0}
-                  max={480}
-                  step={10}
-                  value={cropSettings.bottom}
-                  onChange={(event) =>
-                    setCropSettings((prev) => ({ ...prev, bottom: Number(event.target.value) }))
-                  }
-                />
-              </label>
-              <p className="hint">拖动滑块即可裁去上下多余留白，导出时同样生效。</p>
-            </div>
           </div>
-          </section>
-        )}
+        </section>
       </main>
 
       {isMobile ? (

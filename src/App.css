@@ -76,6 +76,17 @@
   padding: 20px var(--page-gutter) 28px;
 }
 
+.panel--mobile-hidden {
+  display: none;
+}
+
+.app__main--mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px var(--page-gutter) 28px;
+}
+
 .panel {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
@@ -301,6 +312,18 @@ textarea.editor {
   height: 100%;
 }
 
+.preview-overlay-tag {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .safe-highlight {
   position: absolute;
   border: 2px dashed rgba(79, 70, 229, 0.6);
@@ -406,25 +429,62 @@ textarea.editor {
     grid-template-columns: 1fr;
   }
 
-  .panel--preview .preview-wrapper {
-    gap: 14px;
-    padding-top: 0;
+  .panel--preview {
+    order: 0;
   }
 
-  .panel--preview .canvas-container {
-    position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    width: 100%;
+  .panel--controls {
+    order: 1;
+  }
+
+  .panel--editor {
+    order: 2;
+  }
+
+  .panel--mobile-hidden {
+    display: none;
+  }
+
+  .panel--preview--compact {
+    position: sticky;
+    top: calc(var(--page-gutter) + 8px);
+    z-index: 24;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .panel--preview--compact .preview-wrapper {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel--preview--compact h2,
+  .panel--preview--compact .warnings,
+  .panel--preview--compact .note,
+  .panel--preview--compact .crop-settings {
+    display: none;
+  }
+
+  .panel--preview--compact .canvas-container {
+    width: min(70vw, 260px);
+    padding-top: min(70vw, 260px);
+    margin: 0 auto;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+    aspect-ratio: auto;
     height: auto;
   }
 
-  .panel--preview .canvas-container canvas {
-    position: absolute;
-    inset: 0;
+  .panel--preview--compact .preview-overlay-tag {
+    display: inline-flex;
+  }
+
+  .panel--preview--expanded .canvas-container {
     width: 100%;
-    height: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 }
 
@@ -491,4 +551,16 @@ textarea.editor {
   .mobile-nav {
     display: flex;
   }
+}
+
+.preview-overlay-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.16);
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 600;
 }
