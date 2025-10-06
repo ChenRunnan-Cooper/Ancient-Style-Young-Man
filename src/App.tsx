@@ -20,7 +20,21 @@ function useLoadedImage(src: string | null) {
     }
     let cancelled = false
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    const shouldSetCrossOrigin = (() => {
+      if (typeof window === 'undefined') {
+        return false
+      }
+      try {
+        const url = new URL(src, window.location.origin)
+        return url.origin !== window.location.origin
+      } catch (error) {
+        return false
+      }
+    })()
+
+    if (shouldSetCrossOrigin) {
+      img.crossOrigin = 'anonymous'
+    }
     img.onload = () => {
       if (!cancelled) {
         setImage(img)
@@ -147,9 +161,7 @@ function App() {
 
   const [backgroundSource, setBackgroundSource] = useState<string>(DEFAULT_BACKGROUND)
   const [characterSource, setCharacterSource] = useState<string>(DEFAULT_CHARACTER)
-  const [textContent, setTextContent] = useState<string>(
-    '孤月酒，细雨愁。\n此处留白请君落字，一笑风尘三千筹。'
-  )
+  const [textContent, setTextContent] = useState<string>('古风小生在这里祝老师中秋快乐')
   const [inlineAssets, setInlineAssets] = useState<InlineAsset[]>([])
   const [backgroundObjectUrl, setBackgroundObjectUrl] = useState<string | null>(null)
   const [characterObjectUrl, setCharacterObjectUrl] = useState<string | null>(null)
@@ -196,6 +208,17 @@ function App() {
   const renderFrameRef = useRef<number | null>(null)
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const lastWarningsRef = useRef<string[]>([])
+  const controlsSectionRef = useRef<HTMLElement | null>(null)
+  const editorSectionRef = useRef<HTMLElement | null>(null)
+  const previewSectionRef = useRef<HTMLElement | null>(null)
+  const exportSectionRef = useRef<HTMLDivElement | null>(null)
+
+  const scrollToElement = (element: Element | null) => {
+    if (!element) {
+      return
+    }
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const backgroundImage = useLoadedImage(backgroundSource)
   const characterImage = useLoadedImage(characterSource)
@@ -507,7 +530,7 @@ function App() {
       </header>
 
       <main className="app__main">
-        <section className="panel panel--controls">
+        <section className="panel panel--controls" ref={controlsSectionRef}>
           <h2>背景与角色</h2>
           <div className="field">
             <label htmlFor="background-upload">背景图片</label>
@@ -664,7 +687,7 @@ function App() {
           </div>
         </section>
 
-        <section className="panel panel--editor">
+        <section className="panel panel--editor" ref={editorSectionRef}>
           <h2>文案与内嵌元素</h2>
           <textarea
             ref={textAreaRef}
@@ -873,7 +896,7 @@ function App() {
           </div>
         </section>
 
-        <section className="panel panel--preview">
+        <section className="panel panel--preview" ref={previewSectionRef}>
           <h2>预览</h2>
           <div className="preview-wrapper">
             <div className="canvas-container" style={{ aspectRatio: previewAspectRatio }}>
@@ -889,7 +912,7 @@ function App() {
             ) : (
               <p className="note">✅ 好了！导出前可再次微调人物与参数。</p>
             )}
-            <div className="crop-settings">
+            <div className="crop-settings" ref={exportSectionRef}>
               <h3>自定义裁剪</h3>
               <label>
                 上裁剪（当前 {Math.round(previewSize.cropTop)} px）
@@ -922,6 +945,21 @@ function App() {
           </div>
         </section>
       </main>
+
+      <nav className="mobile-nav">
+        <button type="button" onClick={() => scrollToElement(previewSectionRef.current)}>
+          预览
+        </button>
+        <button type="button" onClick={() => scrollToElement(controlsSectionRef.current)}>
+          背景角色
+        </button>
+        <button type="button" onClick={() => scrollToElement(editorSectionRef.current)}>
+          文案排版
+        </button>
+        <button type="button" onClick={() => scrollToElement(exportSectionRef.current)}>
+          裁剪导出
+        </button>
+      </nav>
 
       <footer className="app__footer">
         <p>
